@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeRush — Weak Key Training</title>
+    <meta name="description" content="Identify your weakest keys and practice targeted sessions to fix them.">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="inner-page">
+
+    <!-- Sticky top nav (shared pattern) -->
+    <header class="app-topbar" role="banner">
+        <a href="index.html" class="topbar-brand" id="topbarBrand" aria-label="TypeRush Home">
+            <span class="topbar-icon">⌨️</span>
+            <span class="topbar-name">TypeRush</span>
+        </a>
+        <nav class="topbar-nav" aria-label="App navigation">
+            <a href="index.html" class="topbar-nav-link" id="tnHome">Home</a>
+            <a href="practice.html" class="topbar-nav-link" id="tnPractice">Practice</a>
+            <a href="weak-keys.html" class="topbar-nav-link active" id="tnWeakKeys" aria-current="page">Weak Keys</a>
+            <a href="dashboard.html" class="topbar-nav-link" id="tnDashboard">Dashboard</a>
+        </nav>
+    </header>
+
+    <main class="inner-main">
+
+        <!-- Page title block -->
+        <div class="page-hero">
+            <div class="page-hero-icon">🧠</div>
+            <h1 class="page-hero-title">Weak Key Training</h1>
+            <p class="page-hero-sub">TypeRush has analysed your sessions and found the keys that slow you down most.
+                Target them below.</p>
+        </div>
+
+        <!-- Summary stat cards -->
+        <section class="summary-cards" aria-label="Weak key overview stats">
+            <div class="summary-card" id="scTotalErrors">
+                <div class="summary-card-icon">❌</div>
+                <div class="summary-card-value" id="weakTotalErrors">0</div>
+                <div class="summary-card-label">Total Errors Logged</div>
+            </div>
+            <div class="summary-card accent" id="scMostMistake">
+                <div class="summary-card-icon">⚠️</div>
+                <div class="summary-card-value" id="weakMostMistake">—</div>
+                <div class="summary-card-label">Most Mistaken Key</div>
+            </div>
+        </section>
+
+        <!-- Legend -->
+        <div class="wk-legend" role="note">
+            <span class="wk-legend-item wk-severe">■ High error rate (&gt;20%)</span>
+            <span class="wk-legend-item wk-ok">■ Learning (&lt;20%)</span>
+        </div>
+
+        <!-- Keys grid -->
+        <section class="weak-keys-grid" id="weakKeysGrid" aria-label="All key statistics"></section>
+
+        <!-- Action CTA -->
+        <section class="wk-action-box" aria-label="Start weak key training">
+            <div class="wk-action-content">
+                <div class="wk-action-title">🚀 Train Your Weak Keys</div>
+                <p class="wk-action-desc">TypeRush will automatically generate a practice session using your identified
+                    weak letters. Complete at least one session first to detect them.</p>
+                <button id="wkStartBtn" class="ctrl-btn ctrl-btn--primary wk-start-btn"
+                    onclick="startAutoWeakPractice()" aria-label="Start automatic weak key practice">
+                    Start Weak Training
+                </button>
+            </div>
+        </section>
+
+        <!-- Bottom nav -->
+        <div class="page-bottom-nav">
+            <a href="practice.html" class="ctrl-btn ctrl-btn--ghost" id="wkNavPractice">⌨️ Practice Mode</a>
+            <a href="dashboard.html" class="ctrl-btn ctrl-btn--ghost" id="wkNavDashboard">📈 Full Dashboard</a>
+        </div>
+
+    </main>
+
+    <script src="api.js"></script>
+    <script>
+        let serverKeyStats = {};
+
+        async function loadWeakKeys() {
+            const user = getCurrentUser();
+            if (!user) {
+                document.getElementById('weakTotalErrors').textContent = '0';
+                document.getElementById('weakMostMistake').textContent = '—';
+                document.getElementById('weakKeysGrid').innerHTML = '<p class="empty-state" style="grid-column: 1/-1;">Log in to track your weak keys.</p>';
+                return;
+            }
+
+            try {
+                const data = await fetchHistory();
+                if (data && data.keyStats) {
+                    // Convert from server format (array of {key_char, correct_count, error_count})
+                    // to object lookup format
+                    data.keyStats.forEach(stat => {
+                        serverKeyStats[stat.key_char] = {
+                            correct: stat.correct_count,
+                            errors: stat.error_count
+                        };
+                    });
+                }
+            } catch (err) {
+                console.warn('Failed to load weak keys from server:', err.message);
+            }
+
+            let totalErrors = 0;
+            let maxErrors = 0;
+            let mostMistakeKey = '—';
+
+            for (let [key, stat] of Object.entries(serverKeyStats)) {
+                const errors = stat.errors || 0;
+                totalErrors += errors;
+                if (errors > maxErrors) {
+                    maxErrors = errors;
+                    mostMistakeKey = key.toUpperCase();
+                }
+            }
+
+            document.getElementById('weakTotalErrors').textContent = totalErrors;
+            document.getElementById('weakMostMistake').textContent = mostMistakeKey;
+
+            const grid = document.getElementById('weakKeysGrid');
+            const allLetters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+
+            grid.innerHTML = allLetters.map(letter => {
+                const stats = serverKeyStats[letter] || { correct: 0, errors: 0 };
+                const total = stats.correct + stats.errors;
+                const isWeak = total >= 4 ? ((stats.errors / total) >= 0.10) : (stats.errors >= 2);
+                const errorRate = total > 0 ? ((stats.errors / total) * 100).toFixed(0) : 0;
+                const hasData = total > 0;
+
+                return `
+                <div class="wk-key-card ${isWeak ? 'weak' : ''} ${hasData ? 'has-data' : 'no-data'}" title="${letter.toUpperCase()}: ${stats.correct} correct, ${stats.errors} errors">
+                    <div class="wk-key-letter">${letter.toUpperCase()}</div>
+                    <div class="wk-key-bar-wrap">
+                        <div class="wk-key-bar" style="width: ${Math.min(100, errorRate)}%; background: ${isWeak ? 'var(--color-error)' : 'var(--color-accent-blue)'}"></div>
+                    </div>
+                    <div class="wk-key-stats">
+                        <span class="wk-correct">✓${stats.correct}</span>
+                        <span class="wk-error">✗${stats.errors}</span>
+                    </div>
+                    ${isWeak ? '<div class="wk-badge">Weak</div>' : ''}
+                </div>`;
+            }).join('');
+        }
+
+        function startAutoWeakPractice() {
+            let weakLetters = [];
+
+            for (let [key, stat] of Object.entries(serverKeyStats)) {
+                const total = stat.correct + stat.errors;
+                const isWeak = total >= 4 ? ((stat.errors / total) >= 0.10) : (stat.errors >= 2);
+                if (isWeak) weakLetters.push(key);
+            }
+
+            if (weakLetters.length === 0) {
+                alert('No weak keys detected yet! Practice a bit more and come back.');
+                return;
+            }
+
+            localStorage.setItem('auto_weak_keys', JSON.stringify(weakLetters));
+            localStorage.setItem('auto_start_session', '1');
+            window.location.href = 'practice.html';
+        }
+
+        loadWeakKeys();
+    </script>
+    <!-- Friend List Drawer -->
+    <div class="friends-drawer-overlay" id="friendsOverlay"></div>
+    <div class="friends-drawer" id="friendsDrawer">
+        <div class="friends-header">
+            <h3>Friends</h3>
+            <button class="friends-close" id="friendsCloseBtn">&times;</button>
+        </div>
+        <div class="friends-list">
+            <div class="friend-item">
+                <span class="friend-avatar">🧑</span>
+                <div class="friend-info">
+                    <div class="friend-name">Alex Type</div>
+                    <div class="friend-status online">Online</div>
+                </div>
+                <div class="friend-wpm">110 WPM</div>
+            </div>
+            <div class="friend-item">
+                <span class="friend-avatar">👩</span>
+                <div class="friend-info">
+                    <div class="friend-name">Sam Swift</div>
+                    <div class="friend-status offline">Offline</div>
+                </div>
+                <div class="friend-wpm">95 WPM</div>
+            </div>
+            <div class="friend-item">
+                <span class="friend-avatar">🤓</span>
+                <div class="friend-info">
+                    <div class="friend-name">Code Ninja</div>
+                    <div class="friend-status in-game">In Practice</div>
+                </div>
+                <div class="friend-wpm">130 WPM</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="friends-toggle-btn" id="friendsToggleBtn">
+        👥 Friends
+    </button>
+
+    <script>
+        const friendsDrawer = document.getElementById('friendsDrawer');
+        const friendsOverlay = document.getElementById('friendsOverlay');
+        const friendsToggleBtn = document.getElementById('friendsToggleBtn');
+        const friendsCloseBtn = document.getElementById('friendsCloseBtn');
+
+        if (friendsToggleBtn) {
+            friendsToggleBtn.addEventListener('click', () => {
+                friendsDrawer.classList.add('open');
+                friendsOverlay.classList.add('active');
+            });
+        }
+
+        if (friendsCloseBtn) {
+            friendsCloseBtn.addEventListener('click', () => {
+                friendsDrawer.classList.remove('open');
+                friendsOverlay.classList.remove('active');
+            });
+        }
+
+        if (friendsOverlay) {
+            friendsOverlay.addEventListener('click', () => {
+                friendsDrawer.classList.remove('open');
+                friendsOverlay.classList.remove('active');
+            });
+        }
+    </script>
+</body>
+
+</html>

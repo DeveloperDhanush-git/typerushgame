@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeRush — Multiplayer</title>
+    <meta name="description" content="Challenge your friends to a typing race! Create or join a room.">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="inner-page">
+
+    <header class="app-topbar" role="banner">
+        <a href="index.html" class="topbar-brand" id="topbarBrand" aria-label="TypeRush Home">
+            <span class="topbar-icon">⌨️</span>
+            <span class="topbar-name">TypeRush</span>
+        </a>
+        <nav class="topbar-nav" aria-label="App navigation">
+            <a href="index.html" class="topbar-nav-link" id="tnHome">Home</a>
+            <a href="practice.html" class="topbar-nav-link" id="tnPractice">Practice</a>
+            <a href="dashboard.html" class="topbar-nav-link" id="tnDashboard">Dashboard</a>
+            <a href="leaderboard.html" class="topbar-nav-link" id="tnLeaderboard">Leaderboard</a>
+            <a href="multiplayer.html" class="topbar-nav-link active" id="tnMulti" aria-current="page">Multiplayer</a>
+        </nav>
+    </header>
+
+    <main class="inner-main">
+
+        <!-- Login Required Message -->
+        <div id="loginRequired" style="display:none;">
+            <div class="page-hero">
+                <div class="page-hero-icon">🔒</div>
+                <h1 class="page-hero-title">Login Required</h1>
+                <p class="page-hero-sub">You need to be logged in to play multiplayer.</p>
+            </div>
+            <div class="page-bottom-nav">
+                <a href="login.html" class="ctrl-btn ctrl-btn--primary">🔑 Login</a>
+                <a href="register.html" class="ctrl-btn ctrl-btn--ghost">📝 Register</a>
+            </div>
+        </div>
+
+        <!-- Lobby View (Create / Join) -->
+        <div id="lobbyView" style="display:none;">
+            <div class="page-hero">
+                <div class="page-hero-icon">🎮</div>
+                <h1 class="page-hero-title">Multiplayer Challenge</h1>
+                <p class="page-hero-sub">Challenge a friend or join an existing room.</p>
+            </div>
+
+            <div class="mp-lobby-grid">
+                <!-- Create Room Card -->
+                <div class="mp-card">
+                    <div class="mp-card-icon">🏠</div>
+                    <h3 class="mp-card-title">Create a Room</h3>
+                    <p class="mp-card-desc">Generate a room code and share it with your friend.</p>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label for="createDuration">Duration</label>
+                        <select id="createDuration" class="control-select" style="width:100%; margin-top:0.4rem;">
+                            <option value="30">30 seconds</option>
+                            <option value="60" selected>1 minute</option>
+                            <option value="180">3 minutes</option>
+                        </select>
+                    </div>
+                    <button id="createRoomBtn" class="ctrl-btn ctrl-btn--primary"
+                        style="width:100%; justify-content:center;">
+                        🚀 Create Room
+                    </button>
+                </div>
+
+                <!-- Join Room Card -->
+                <div class="mp-card">
+                    <div class="mp-card-icon">🎯</div>
+                    <h3 class="mp-card-title">Join a Room</h3>
+                    <p class="mp-card-desc">Enter the room code shared by your friend.</p>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label for="joinCode">Room Code</label>
+                        <input type="text" id="joinCode" class="auth-input" placeholder="Enter 6-char code"
+                            maxlength="6"
+                            style="text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; text-align: center;">
+                    </div>
+                    <button id="joinRoomBtn" class="ctrl-btn ctrl-btn--primary"
+                        style="width:100%; justify-content:center;">
+                        🎯 Join Room
+                    </button>
+                </div>
+            </div>
+            <div id="lobbyMessage" class="auth-message" style="display:none; max-width:500px; margin:1rem auto;"></div>
+        </div>
+
+        <!-- Waiting Room View (host waits for opponent) -->
+        <div id="waitingView" style="display:none;">
+            <div class="page-hero">
+                <div class="page-hero-icon">⏳</div>
+                <h1 class="page-hero-title">Waiting for Opponent</h1>
+                <p class="page-hero-sub">Share this room code with your friend:</p>
+            </div>
+            <div class="mp-code-display" id="roomCodeDisplay">------</div>
+            <p class="mp-wait-hint">The match will begin when your friend joins using this code.</p>
+            <div id="waitingStatus" class="mp-status-text">Waiting...</div>
+        </div>
+
+        <!-- Match View (typing race) -->
+        <div id="matchView" style="display:none;">
+            <div class="mp-match-header">
+                <div class="mp-player-bar" id="myProgressBar">
+                    <div class="mp-player-name" id="myName">You</div>
+                    <div class="mp-progress-track">
+                        <div class="mp-progress-fill" id="myProgress" style="width: 0%;"></div>
+                    </div>
+                    <div class="mp-player-wpm" id="myWpm">0 WPM</div>
+                </div>
+                <div class="mp-vs">VS</div>
+                <div class="mp-player-bar opponent" id="opponentProgressBar">
+                    <div class="mp-player-name" id="opponentName">Opponent</div>
+                    <div class="mp-progress-track">
+                        <div class="mp-progress-fill opponent-fill" id="opponentProgress" style="width: 0%;"></div>
+                    </div>
+                    <div class="mp-player-wpm" id="opponentWpm">0 WPM</div>
+                </div>
+            </div>
+
+            <div class="mp-timer" id="mpTimer">00:00</div>
+
+            <div class="typing-arena">
+                <div class="text-display" id="mpDisplayText"></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="mpProgressFill"></div>
+                </div>
+                <input type="text" id="mpUserInput" class="typing-input"
+                    placeholder="Start typing when the match begins..." autocomplete="off" autocorrect="off"
+                    autocapitalize="off" spellcheck="false" disabled>
+            </div>
+        </div>
+
+        <!-- Results View -->
+        <div id="mpResultsView" style="display:none;">
+            <div class="page-hero">
+                <div class="page-hero-icon" id="resultIcon">🏆</div>
+                <h1 class="page-hero-title" id="resultTitle">Match Complete!</h1>
+                <p class="page-hero-sub" id="resultSub">Calculating results...</p>
+            </div>
+            <div class="mp-results-cards" id="mpResultsCards"></div>
+            <div class="page-bottom-nav">
+                <button class="ctrl-btn ctrl-btn--primary" onclick="location.reload()">🎮 Play Again</button>
+                <a href="leaderboard.html" class="ctrl-btn ctrl-btn--ghost">🏆 Leaderboard</a>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="api.js"></script>
+    <script>
+        // ============================================================
+        // TypeRush Multiplayer — Client-side Logic
+        // ============================================================
+
+        let mpState = {
+            roomCode: null,
+            textContent: '',
+            duration: 60,
+            isHost: false,
+            ws: null,
+            active: false,
+            startTime: null,
+            timerInterval: null,
+            timerRemaining: 0,
+            userInputBuffer: '',
+            correctChars: 0,
+            errorCount: 0,
+            currentError: false,
+            currentErrorLogged: false,
+            opponentFinished: false
+        };
+
+        // ── View management ──
+        function showView(viewId) {
+            ['loginRequired', 'lobbyView', 'waitingView', 'matchView', 'mpResultsView'].forEach(id => {
+                document.getElementById(id).style.display = id === viewId ? '' : 'none';
+            });
+        }
+
+        // ── Init: Check login ──
+        const user = getCurrentUser();
+        if (!user) {
+            showView('loginRequired');
+        } else {
+            // Check for room code and role in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomCode = urlParams.get('room');
+            const role = urlParams.get('role');
+
+            if (roomCode) {
+                if (role === 'host') {
+                    // Host automation: Fetch room details and enter waiting room
+                    (async () => {
+                        try {
+                            const data = await getRoomStatus(roomCode);
+                            mpState.roomCode = data.roomCode;
+                            mpState.textContent = data.textContent;
+                            mpState.duration = data.duration;
+                            mpState.isHost = true;
+
+                            document.getElementById('roomCodeDisplay').textContent = data.roomCode;
+                            showView('waitingView');
+                            mpState.ws = connectToRoom(data.roomCode, handleWSMessage);
+                        } catch (e) {
+                            showLobbyMessage('Failed to load room details: ' + e.message);
+                        }
+                    })();
+                } else {
+                    // Guest automation: Auto-join
+                    setTimeout(() => {
+                        document.getElementById('joinCode').value = roomCode;
+                        document.getElementById('joinRoomBtn').click();
+                    }, 500);
+                }
+            }
+            showView('lobbyView');
+        }
+
+        function showLobbyMessage(text, isError = true) {
+            const el = document.getElementById('lobbyMessage');
+            el.textContent = text;
+            el.className = 'auth-message ' + (isError ? 'auth-error' : 'auth-success');
+            el.style.display = 'block';
+        }
+
+        // ── Create Room ──
+        document.getElementById('createRoomBtn').addEventListener('click', async () => {
+            try {
+                const duration = parseInt(document.getElementById('createDuration').value);
+                const data = await createRoom(duration);
+                mpState.roomCode = data.roomCode;
+                mpState.textContent = data.textContent;
+                mpState.duration = data.duration;
+                mpState.isHost = true;
+
+                document.getElementById('roomCodeDisplay').textContent = data.roomCode;
+                showView('waitingView');
+
+                // Connect via WebSocket and wait for opponent
+                mpState.ws = connectToRoom(data.roomCode, handleWSMessage);
+
+            } catch (err) {
+                showLobbyMessage(err.message);
+            }
+        });
+
+        // ── Join Room ──
+        document.getElementById('joinRoomBtn').addEventListener('click', async () => {
+            const code = document.getElementById('joinCode').value.trim().toUpperCase();
+            if (!code || code.length < 4) {
+                showLobbyMessage('Please enter a valid room code.');
+                return;
+            }
+
+            try {
+                const data = await joinRoom(code);
+                mpState.roomCode = data.roomCode;
+                mpState.textContent = data.textContent;
+                mpState.duration = data.duration;
+                mpState.isHost = false;
+
+                // Connect via WebSocket
+                mpState.ws = connectToRoom(data.roomCode, handleWSMessage);
+
+                // Short delay then start match
+                showLobbyMessage('Joined! Starting match...', false);
+                setTimeout(() => {
+                    startMatch();
+                    // Tell the host to start too
+                    sendStartGame(mpState.ws, mpState.roomCode);
+                }, 1500);
+
+            } catch (err) {
+                showLobbyMessage(err.message);
+            }
+        });
+
+        // ── WebSocket message handler ──
+        function handleWSMessage(msg) {
+            switch (msg.type) {
+                case 'player-joined':
+                    document.getElementById('waitingStatus').textContent =
+                        `${msg.username} joined! (${msg.playerCount}/2 players)`;
+                    break;
+
+                case 'game-started':
+                    // The guest told us to start
+                    if (mpState.isHost) {
+                        startMatch();
+                    }
+                    break;
+
+                case 'progress-update':
+                    // Update opponent's progress display
+                    document.getElementById('opponentName').textContent = msg.username || 'Opponent';
+                    document.getElementById('opponentWpm').textContent = `${msg.wpm} WPM`;
+                    document.getElementById('opponentProgress').style.width = `${msg.progress || 0}%`;
+                    break;
+
+                case 'player-finished':
+                    mpState.opponentFinished = true;
+                    document.getElementById('opponentWpm').textContent = `${msg.wpm} WPM ✅`;
+                    break;
+
+                case 'player-left':
+                    if (mpState.active) {
+                        // If opponent disconnects during match
+                        document.getElementById('opponentName').textContent = 'Disconnected';
+                    }
+                    break;
+            }
+        }
+
+        // ── Start the match ──
+        function startMatch() {
+            showView('matchView');
+            mpState.active = true;
+            mpState.startTime = Date.now();
+            mpState.timerRemaining = mpState.duration;
+            mpState.userInputBuffer = '';
+            mpState.correctChars = 0;
+            mpState.errorCount = 0;
+            mpState.currentError = false;
+            mpState.currentErrorLogged = false;
+
+            document.getElementById('myName').textContent = user.username;
+            renderMPText();
+
+            const input = document.getElementById('mpUserInput');
+            input.disabled = false;
+            input.value = '';
+            input.focus();
+            input.placeholder = 'Type now!';
+
+            // Start timer
+            updateMPTimer();
+            mpState.timerInterval = setInterval(() => {
+                if (mpState.timerRemaining <= 1) {
+                    clearInterval(mpState.timerInterval);
+                    endMatch();
+                } else {
+                    mpState.timerRemaining--;
+                    updateMPTimer();
+                }
+            }, 1000);
+
+            // Send progress updates every 500ms
+            setInterval(() => {
+                if (!mpState.active) return;
+                const minutes = (Date.now() - mpState.startTime) / 60000;
+                const typed = mpState.userInputBuffer.length;
+                const wpm = Math.floor((typed / 5) / Math.max(0.01, minutes));
+                const progress = mpState.textContent.length > 0
+                    ? Math.floor((typed / mpState.textContent.length) * 100)
+                    : 0;
+
+                document.getElementById('myWpm').textContent = `${wpm} WPM`;
+                document.getElementById('myProgress').style.width = `${progress}%`;
+
+                sendProgress(mpState.ws, mpState.roomCode, wpm, 0, progress);
+            }, 500);
+        }
+
+        function updateMPTimer() {
+            const mins = Math.floor(mpState.timerRemaining / 60);
+            const secs = mpState.timerRemaining % 60;
+            document.getElementById('mpTimer').textContent =
+                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function escapeHtml(s) {
+            return s.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+        }
+
+        function renderMPText() {
+            const target = mpState.textContent;
+            const typed = mpState.userInputBuffer;
+            let html = '';
+            for (let i = 0; i < target.length; i++) {
+                let cls = '';
+                if (i < typed.length) cls = 'char-correct';
+                else if (i === typed.length) cls = mpState.currentError ? 'char-incorrect char-current' : 'char-current';
+                let ch = target[i] === ' ' ? '·' : escapeHtml(target[i]);
+                html += `<span class="${cls}">${ch}</span>`;
+            }
+            document.getElementById('mpDisplayText').innerHTML = html;
+            const progress = target.length > 0 ? (typed.length / target.length) * 100 : 0;
+            document.getElementById('mpProgressFill').style.width = `${progress}%`;
+        }
+
+        // ── Handle typing ──
+        document.getElementById('mpUserInput').addEventListener('input', function (e) {
+            if (!mpState.active) return;
+            const input = e.target.value;
+            const target = mpState.textContent;
+            const old = mpState.userInputBuffer;
+
+            if (input.length > old.length) {
+                const addedChar = input[input.length - 1];
+                const expected = target[old.length];
+
+                if (addedChar === expected) {
+                    mpState.correctChars++;
+                    mpState.userInputBuffer += addedChar;
+                    mpState.currentError = false;
+                    mpState.currentErrorLogged = false;
+                } else {
+                    if (!mpState.currentErrorLogged) {
+                        mpState.errorCount++;
+                        mpState.currentErrorLogged = true;
+                    }
+                    mpState.currentError = true;
+                }
+            }
+
+            e.target.value = mpState.userInputBuffer;
+            renderMPText();
+
+            // Check if text completed
+            if (mpState.userInputBuffer.length >= target.length) {
+                endMatch();
+            }
+        });
+
+        document.getElementById('mpUserInput').addEventListener('paste', e => e.preventDefault());
+
+        // ── End match ──
+        async function endMatch() {
+            if (!mpState.active) return;
+            mpState.active = false;
+            clearInterval(mpState.timerInterval);
+
+            const input = document.getElementById('mpUserInput');
+            input.disabled = true;
+
+            const totalTyped = mpState.correctChars + mpState.errorCount;
+            const accuracy = totalTyped > 0 ? (mpState.correctChars / totalTyped) * 100 : 100;
+            const minutes = (Date.now() - mpState.startTime) / 60000;
+            const wpm = totalTyped > 0 ? Math.floor((totalTyped / 5) / Math.max(0.01, minutes)) : 0;
+
+            // Send finished via WebSocket
+            sendFinished(mpState.ws, mpState.roomCode, wpm, accuracy, mpState.errorCount);
+
+            // Submit to server
+            try {
+                const result = await submitMatchResult(mpState.roomCode, wpm, Math.floor(accuracy), mpState.errorCount);
+
+                if (result.finished) {
+                    showResults(result, wpm, accuracy);
+                } else {
+                    // Wait for opponent
+                    showView('mpResultsView');
+                    document.getElementById('resultTitle').textContent = 'Waiting for opponent...';
+                    document.getElementById('resultSub').textContent = 'Your opponent is still typing.';
+                    document.getElementById('resultIcon').textContent = '⏳';
+
+                    // Poll every 2 seconds
+                    const poll = setInterval(async () => {
+                        try {
+                            const status = await getRoomStatus(mpState.roomCode);
+                            if (status.status === 'finished' && status.results.length === 2) {
+                                clearInterval(poll);
+                                const winner = status.results.find(r => r.is_winner);
+                                showResults({
+                                    finished: true,
+                                    winner: winner?.username || 'Unknown',
+                                    winnerId: winner?.user_id,
+                                    results: status.results
+                                }, wpm, accuracy);
+                            }
+                        } catch (e) { }
+                    }, 2000);
+                }
+            } catch (err) {
+                console.error('Submit match error:', err);
+            }
+        }
+
+        function showResults(result, myWpm, myAcc) {
+            showView('mpResultsView');
+            const isWinner = result.winnerId === user.id;
+
+            document.getElementById('resultIcon').textContent = isWinner ? '🏆' : '💪';
+            document.getElementById('resultTitle').textContent = isWinner ? 'You Won!' : `${result.winner} Wins!`;
+            document.getElementById('resultSub').textContent = isWinner
+                ? 'Incredible typing speed! You crushed it!'
+                : 'Great effort! Keep practicing to improve.';
+
+            const cardsDiv = document.getElementById('mpResultsCards');
+            cardsDiv.innerHTML = result.results.map(r => `
+                <div class="mp-result-card ${r.user_id === user.id ? 'is-me' : ''}">
+                    <div class="mp-result-name">${r.username} ${r.is_winner ? '🏆' : ''}</div>
+                    <div class="mp-result-stats">
+                        <span><strong>${r.wpm}</strong> WPM</span>
+                        <span><strong>${Math.floor(r.accuracy)}%</strong> Acc</span>
+                        <span><strong>${r.errors}</strong> Errors</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+
+</html>

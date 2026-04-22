@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeRush — Leaderboard</title>
+    <meta name="description" content="See who types the fastest! Global TypeRush leaderboard ranked by WPM.">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="inner-page">
+
+    <header class="app-topbar" role="banner">
+        <a href="index.html" class="topbar-brand" id="topbarBrand" aria-label="TypeRush Home">
+            <span class="topbar-icon">⌨️</span>
+            <span class="topbar-name">TypeRush</span>
+        </a>
+        <nav class="topbar-nav" aria-label="App navigation">
+            <a href="index.html" class="topbar-nav-link" id="tnHome">Home</a>
+            <a href="practice.html" class="topbar-nav-link" id="tnPractice">Practice</a>
+            <a href="dashboard.html" class="topbar-nav-link" id="tnDashboard">Dashboard</a>
+            <a href="leaderboard.html" class="topbar-nav-link active" id="tnLeaderboard"
+                aria-current="page">Leaderboard</a>
+            <a href="multiplayer.html" class="topbar-nav-link" id="tnMulti">Multiplayer</a>
+        </nav>
+    </header>
+
+    <main class="inner-main">
+        <div class="page-hero">
+            <div class="page-hero-icon">🏆</div>
+            <h1 class="page-hero-title">Global Leaderboard</h1>
+            <p class="page-hero-sub">The fastest typists in the TypeRush community. Where do you rank?</p>
+        </div>
+
+        <section class="dash-section" aria-label="Leaderboard table">
+            <div class="dash-table-wrap">
+                <div id="leaderboardTable">
+                    <p class="empty-state">Loading leaderboard...</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="page-bottom-nav">
+            <a href="practice.html" class="ctrl-btn ctrl-btn--primary">⌨️ Start Practice</a>
+            <a href="multiplayer.html" class="ctrl-btn ctrl-btn--ghost">🎮 Multiplayer</a>
+        </div>
+    </main>
+
+    <script src="api.js"></script>
+    <script>
+        async function loadLeaderboard() {
+            const tableDiv = document.getElementById('leaderboardTable');
+            try {
+                const data = await fetchLeaderboard();
+                const rows = data.leaderboard || [];
+
+                if (rows.length === 0) {
+                    tableDiv.innerHTML = '<p class="empty-state">No players on the leaderboard yet. Be the first!</p>';
+                    return;
+                }
+
+                const user = getCurrentUser();
+                const currentUserId = user ? user.id : null;
+
+                tableDiv.innerHTML = `
+                    <table class="analysis-table leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th>Best WPM</th>
+                                <th>Best Accuracy</th>
+                                <th>Sessions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows.map((row, i) => {
+                    const isMe = row.id === currentUserId;
+                    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+                    return `
+                                    <tr class="${isMe ? 'row-highlight' : ''}">
+                                        <td><strong>${medal} #${i + 1}</strong></td>
+                                        <td>${row.username}${isMe ? ' <span class="badge-you">You</span>' : ''}</td>
+                                        <td><strong>${row.bestWpm}</strong></td>
+                                        <td>${Math.floor(row.bestAcc)}%</td>
+                                        <td>${row.totalSessions}</td>
+                                    </tr>`;
+                }).join('')}
+                        </tbody>
+                    </table>`;
+
+            } catch (err) {
+                tableDiv.innerHTML = `<p class="empty-state">Could not load leaderboard. Make sure the server is running.<br><small>${err.message}</small></p>`;
+            }
+        }
+
+        loadLeaderboard();
+    </script>
+</body>
+
+</html>

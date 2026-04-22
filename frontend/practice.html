@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>TypeRush — Practice</title>
+    <meta name="description"
+        content="Adaptive typing practice session — track WPM, accuracy, and weak keys in real time.">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="practice-page">
+
+    <header class="app-topbar" role="banner">
+        <a href="index.html" class="topbar-brand" id="topbarBrand" aria-label="TypeRush Home">
+            <span class="topbar-icon">⌨️</span>
+            <span class="topbar-name">TypeRush</span>
+        </a>
+
+        <div class="topbar-live-stats" id="liveStatsPanel" role="status" aria-live="polite">
+            <div class="tstat">
+                <div class="tstat-value" id="statWpm">0</div>
+                <div class="tstat-label">WPM</div>
+            </div>
+            <div class="tstat-sep" aria-hidden="true"></div>
+            <div class="tstat">
+                <div class="tstat-value" id="statAcc">100</div>
+                <div class="tstat-label">ACC%</div>
+            </div>
+            <div class="tstat-sep" aria-hidden="true"></div>
+            <div class="tstat">
+                <div class="tstat-value" id="statErrors">0</div>
+                <div class="tstat-label">ERRORS</div>
+            </div>
+            <div class="tstat-sep" aria-hidden="true"></div>
+            <div class="tstat timer-tstat">
+                <div class="tstat-value" id="timerDisplay">00:00</div>
+                <div class="tstat-label">TIME</div>
+            </div>
+        </div>
+
+        <nav class="topbar-nav" aria-label="App navigation">
+            <a href="index.html" class="topbar-nav-link" id="tnHome">Home</a>
+            <a href="weak-keys.html" class="topbar-nav-link" id="tnWeakKeys">Weak Keys</a>
+            <a href="dashboard.html" class="topbar-nav-link" id="tnDashboard">Dashboard</a>
+        </nav>
+    </header>
+
+    <main class="practice-main" id="practiceMain">
+
+        <section class="controls-row info-row" aria-label="Current Settings">
+            <div class="current-settings">
+                <span class="setting-badge" id="diffBadge">Mode: Medium</span>
+                <span class="setting-badge" id="timeBadge">Time: 1m</span>
+                <span class="setting-badge weak-badge" id="weakModeBadge" style="display: none;">&#129504; Weak Mode
+                    Active</span>
+            </div>
+            <div class="control-actions">
+                <button id="resetToMenuBtn" class="ctrl-btn ctrl-btn--ghost" aria-label="Change Settings">
+                    &#8634; Change Settings
+                </button>
+            </div>
+        </section>
+
+        <section class="typing-arena" aria-label="Typing area">
+
+            <div class="text-display" id="displayText" role="textbox" aria-label="Text to type" aria-readonly="true">
+            </div>
+
+            <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <input type="text" id="userInput" class="typing-input"
+                placeholder="Session will start automatically, stay ready to type..." autocomplete="off"
+                autocorrect="off" autocapitalize="off" spellcheck="false" disabled aria-label="Typing input">
+
+        </section>
+
+        <section class="keyboard-container" aria-label="Visual keyboard" role="img">
+            <div class="keyboard-row layout-row" id="keyboardRow0"></div>
+            <div class="keyboard-row layout-row" id="keyboardRow1"></div>
+            <div class="keyboard-row layout-row" id="keyboardRow2"></div>
+            <div class="keyboard-row layout-row" id="keyboardRow3"></div>
+            <div class="keyboard-row layout-row" id="keyboardRow4"></div>
+        </section>
+
+    </main>
+
+    <div id="setupModal" class="results-overlay active" role="dialog" aria-modal="true" aria-label="Practice Setup"
+        style="visibility: visible; opacity: 1;">
+        <div class="results-card setup-card">
+            <h2 class="results-title">Practice Setup</h2>
+            <p style="color: var(--color-text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem; line-height: 1.4;">
+                Select your preferences. To focus specifically on your frequent mistakes, use Weak Mode.
+            </p>
+
+            <div class="control-group" id="ctrlDifficulty">
+                <label class="control-label" for="difficultySelect">Difficulty</label>
+                <select id="difficultySelect" class="control-select" aria-label="Select difficulty">
+                    <option value="easy">Easy (3-5 letters)</option>
+                    <option value="medium" selected>Medium (5-8 letters)</option>
+                    <option value="hard">Hard (8-15 letters)</option>
+                </select>
+            </div>
+
+            <div class="control-group" id="ctrlTimer">
+                <label class="control-label" for="timerSelect">Duration</label>
+                <select id="timerSelect" class="control-select" aria-label="Select timer">
+                    <option value="30">30 seconds</option>
+                    <option value="60" selected>1 minute</option>
+                    <option value="180">3 minutes</option>
+                    <option value="300">5 minutes</option>
+                </select>
+            </div>
+
+            <div class="setup-actions" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <button id="startPracticeBtn" class="ctrl-btn ctrl-btn--primary"
+                    aria-label="Start normal practice session"
+                    style="justify-content: center; width: 100%; padding: 0.9rem; font-size: 1rem;">
+                    <span>&#9654;</span> Start Normal Practice
+                </button>
+                <button id="weakFocusBtn" class="ctrl-btn ctrl-btn--orange" aria-label="Enable smart weak key training"
+                    style="justify-content: center; width: 100%; padding: 0.9rem; font-size: 1rem;">
+                    &#129504; Start Weak Mode
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="resultsModal" class="results-overlay" role="dialog" aria-modal="true" aria-label="Session results">
+        <div class="results-card">
+            <div class="results-badge">&#127937; Session Complete</div>
+            <h2 class="results-title">Great work!</h2>
+
+            <div class="results-stats-grid">
+                <div class="result-stat">
+                    <div class="result-stat-value" id="finalWpm">0</div>
+                    <div class="result-stat-label">Words Per Min</div>
+                </div>
+                <div class="result-stat">
+                    <div class="result-stat-value"><span id="finalAcc">0</span>%</div>
+                    <div class="result-stat-label">Accuracy</div>
+                </div>
+                <div class="result-stat">
+                    <div class="result-stat-value" id="finalErrors">0</div>
+                    <div class="result-stat-label">Errors</div>
+                </div>
+            </div>
+
+            <div class="results-weak-row">
+                <span class="results-weak-label">&#128269; Weak Keys:</span>
+                <span class="results-weak-keys" id="weakKeysList">&#8212;</span>
+            </div>
+
+            <div class="results-actions">
+                <button id="modalRestartBtn" class="ctrl-btn ctrl-btn--primary" aria-label="Practice again">
+                    &#128260; Practice Again
+                </button>
+                <button id="modalMenuBtn" class="ctrl-btn ctrl-btn--ghost" aria-label="Go to home">
+                    &#127968; Home
+                </button>
+                <a href="dashboard.html" class="ctrl-btn ctrl-btn--outline" id="modalDashBtn"
+                    aria-label="View full dashboard">
+                    &#128200; Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="api.js"></script>
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var startBtn = document.getElementById('startPracticeBtn');
+            var weakFocusBtn = document.getElementById('weakFocusBtn');
+            var resetBtn = document.getElementById('resetToMenuBtn');
+            var setupModal = document.getElementById('setupModal');
+
+            var diffBadge = document.getElementById('diffBadge');
+            var timeBadge = document.getElementById('timeBadge');
+            var weakModeBadge = document.getElementById('weakModeBadge');
+            var diffSelect = document.getElementById('difficultySelect');
+            var timeSelect = document.getElementById('timerSelect');
+
+            function updateBadges(isWeak) {
+                if (diffBadge && diffSelect) {
+                    diffBadge.innerText = 'Mode: ' + diffSelect.options[diffSelect.selectedIndex].text.split(' ')[0];
+                }
+                if (timeBadge && timeSelect) {
+                    timeBadge.innerText = 'Time: ' + timeSelect.options[timeSelect.selectedIndex].text;
+                }
+                if (weakModeBadge) {
+                    weakModeBadge.style.display = isWeak ? 'inline-block' : 'none';
+                }
+            }
+
+            function hideSetupModal() {
+                if (setupModal) {
+                    setupModal.classList.remove('active');
+                    setupModal.style.visibility = 'hidden';
+                    setupModal.style.opacity = '0';
+                }
+            }
+
+            if (startBtn) {
+                startBtn.addEventListener('click', function () {
+                    hideSetupModal();
+                    updateBadges(false);
+                });
+            }
+
+            if (weakFocusBtn) {
+                weakFocusBtn.addEventListener('click', function () {
+                    setTimeout(function () {
+                        if (typeof gameState !== 'undefined' && gameState.autoWeakKeys && gameState.autoWeakKeys.length > 0) {
+                            hideSetupModal();
+                            updateBadges(true);
+                            if (typeof startPractice === 'function') {
+                                startPractice();
+                            }
+                        }
+                    }, 50);
+                });
+            }
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function () {
+                    if (setupModal) {
+                        setupModal.style.visibility = 'visible';
+                        setupModal.style.opacity = '1';
+                        setupModal.classList.add('active');
+                    }
+                });
+            }
+
+            var modalMenuBtn = document.getElementById('modalMenuBtn');
+            if (modalMenuBtn) {
+                modalMenuBtn.addEventListener('click', function () {
+                    window.location.href = 'index.html';
+                });
+            }
+
+            if (localStorage.getItem('auto_start_session') === '1') {
+                localStorage.removeItem('auto_start_session');
+
+                if (setupModal) {
+                    setupModal.style.visibility = 'visible';
+                    setupModal.style.opacity = '1';
+                    setupModal.classList.add('active');
+                }
+
+                var popupTitle = document.querySelector('.setup-card .results-title');
+                if (popupTitle) popupTitle.innerText = "Targeted Weak Training";
+
+                var desc = document.querySelector('.setup-card p');
+                if (desc) desc.innerText = "Select your difficulty and duration for your custom weak key session.";
+
+                var normalBtn = document.getElementById('startPracticeBtn');
+                if (normalBtn) normalBtn.style.display = 'none';
+
+            } else {
+                if (setupModal) {
+                    setupModal.style.visibility = 'visible';
+                    setupModal.style.opacity = '1';
+                    setupModal.classList.add('active');
+                }
+            }
+        });
+    </script>
+
+</body>
+
+</html>

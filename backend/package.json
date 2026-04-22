@@ -1,0 +1,16 @@
+{
+  "name": "typerush-backend",
+  "version": "1.0.0",
+  "description": "TypeRush backend — Node.js HTTP server with MySQL and WebSocket multiplayer",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "setup-db": "node setup-db.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^17.4.2",
+    "mysql2": "^3.9.0",
+    "ws": "^8.16.0"
+  }
+}

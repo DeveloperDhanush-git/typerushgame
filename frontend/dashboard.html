@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeRush — Dashboard</title>
+    <meta name="description"
+        content="View your typing progress: WPM history, accuracy trends, key analysis, and full session history.">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="inner-page">
+
+    <!-- Sticky top nav -->
+    <header class="app-topbar" role="banner">
+        <a href="index.html" class="topbar-brand" id="topbarBrand" aria-label="TypeRush Home">
+            <span class="topbar-icon">⌨️</span>
+            <span class="topbar-name">TypeRush</span>
+        </a>
+        <nav class="topbar-nav" aria-label="App navigation">
+            <a href="index.html" class="topbar-nav-link" id="tnHome">Home</a>
+            <a href="practice.html" class="topbar-nav-link" id="tnPractice">Practice</a>
+            <a href="weak-keys.html" class="topbar-nav-link" id="tnWeakKeys">Weak Keys</a>
+            <a href="dashboard.html" class="topbar-nav-link active" id="tnDashboard" aria-current="page">Dashboard</a>
+            <a href="leaderboard.html" class="topbar-nav-link" id="tnLeaderboard">Leaderboard</a>
+            <a href="#" class="topbar-nav-link" id="tnLogout" onclick="logoutUser(); return false;"
+                style="display:none;">Logout</a>
+        </nav>
+    </header>
+
+    <main class="inner-main">
+
+        <!-- User greeting -->
+        <div class="page-hero">
+            <div class="page-hero-icon">📊</div>
+            <h1 class="page-hero-title" id="dashGreeting">Your Dashboard</h1>
+            <p class="page-hero-sub">Track every session, spot your trends, and celebrate your progress.</p>
+        </div>
+
+        <!-- Top stats grid -->
+        <section class="dash-stats-grid" aria-label="Top statistics">
+            <div class="dash-stat-card" id="dscBestWpm">
+                <div class="dash-stat-icon">🏆</div>
+                <div class="dash-stat-value" id="dashBestWpm">0</div>
+                <div class="dash-stat-label">Best WPM</div>
+            </div>
+            <div class="dash-stat-card" id="dscBestAcc">
+                <div class="dash-stat-icon">🎯</div>
+                <div class="dash-stat-value" id="dashBestAcc">0</div>
+                <div class="dash-stat-label">Best Accuracy %</div>
+            </div>
+            <div class="dash-stat-card" id="dscTotalTime">
+                <div class="dash-stat-icon">⏱️</div>
+                <div class="dash-stat-value" id="dashTotalTime">0</div>
+                <div class="dash-stat-label">Practice Minutes</div>
+            </div>
+            <div class="dash-stat-card" id="dscSessions">
+                <div class="dash-stat-icon">📝</div>
+                <div class="dash-stat-value" id="dashSessions">0</div>
+                <div class="dash-stat-label">Total Sessions</div>
+            </div>
+        </section>
+
+        <!-- Weak key analysis -->
+        <section class="dash-section" id="sectionWeakAnalysis" aria-labelledby="sectionWeakTitle">
+            <div class="dash-section-header">
+                <h2 class="dash-section-title" id="sectionWeakTitle">🔍 Key Error Analysis</h2>
+                <span class="dash-section-sub">Sorted by error rate — highest first</span>
+            </div>
+            <div class="dash-table-wrap">
+                <div id="weakAnalysisTable"></div>
+            </div>
+        </section>
+
+        <!-- Session history -->
+        <section class="dash-section" id="sectionHistory" aria-labelledby="sectionHistTitle">
+            <div class="dash-section-header">
+                <h2 class="dash-section-title" id="sectionHistTitle">📜 Session History</h2>
+                <span class="dash-section-sub">Most recent sessions first</span>
+            </div>
+            <div id="fullHistoryList" class="history-list" role="list"></div>
+        </section>
+
+        <!-- Danger zone -->
+        <section class="dash-section danger-zone" id="sectionDanger" aria-labelledby="dangerTitle">
+            <div class="dash-section-header">
+                <h2 class="dash-section-title" id="dangerTitle">⚠️ Data Management</h2>
+            </div>
+            <p class="danger-desc">Clearing your data will remove all local sessions, statistics, and key tracking. This
+                cannot be undone.</p>
+            <button id="clearAllDataBtn" class="ctrl-btn ctrl-btn--danger" aria-label="Clear all practice data">
+                🗑️ Clear All Data
+            </button>
+        </section>
+
+        <!-- Bottom nav -->
+        <div class="page-bottom-nav">
+            <a href="practice.html" class="ctrl-btn ctrl-btn--primary" id="dashNavPractice">⌨️ Start Practice</a>
+            <a href="weak-keys.html" class="ctrl-btn ctrl-btn--ghost" id="dashNavWeakKeys">🧠 Weak Key Training</a>
+            <a href="multiplayer.html" class="ctrl-btn ctrl-btn--ghost" id="dashNavMulti">🎮 Multiplayer</a>
+        </div>
+
+    </main>
+
+    <script src="api.js"></script>
+    <script>
+        async function loadDashboard() {
+            const user = getCurrentUser();
+
+            if (user) {
+                document.getElementById('dashGreeting').textContent = `Welcome, ${user.username}!`;
+                document.getElementById('tnLogout').style.display = '';
+                try {
+                    data = await fetchHistory();
+                } catch (err) {
+                    console.warn('Could not fetch from server:', err.message);
+                }
+            } else {
+                document.getElementById('weakAnalysisTable').innerHTML = '<p class="empty-state"><a href="login.html">Log in</a> to view your typing data.</p>';
+                document.getElementById('fullHistoryList').innerHTML = '<div class="empty-state">Please <a href="login.html">log in</a> to see history.</div>';
+                document.getElementById('dashGreeting').textContent = `Your Dashboard`;
+                return;
+            }
+
+            if (data) {
+                // Server data available — use it
+                document.getElementById('dashBestWpm').innerText = data.bestWpm || 0;
+                document.getElementById('dashBestAcc').innerText = Math.floor(data.bestAcc || 0);
+                document.getElementById('dashTotalTime').innerText = data.totalPracticeMinutes || 0;
+                document.getElementById('dashSessions').innerText = data.totalSessions || 0;
+
+                // Key analysis from server
+                renderKeyAnalysis(data.keyStats || []);
+                renderSessionHistory(data.sessions || []);
+            } else {
+                document.getElementById('weakAnalysisTable').innerHTML = '<p class="empty-state">Could not load data from server.</p>';
+                document.getElementById('fullHistoryList').innerHTML = '<div class="empty-state">No sessions recorded yet. <a href="practice.html">Start practicing!</a></div>';
+            }
+
+        }
+
+        function renderKeyAnalysis(keyStats) {
+            const analysisTable = document.getElementById('weakAnalysisTable');
+            const sorted = keyStats
+                .map(k => ({
+                    letter: k.key_char,
+                    correct: k.correct_count,
+                    errors: k.error_count,
+                    total: k.correct_count + k.error_count,
+                    errorRate: (k.correct_count + k.error_count) > 0 ? (k.error_count / (k.correct_count + k.error_count)) * 100 : 0
+                }))
+                .filter(k => k.total > 0)
+                .sort((a, b) => b.errorRate - a.errorRate);
+
+            if (sorted.length === 0) {
+                analysisTable.innerHTML = '<p class="empty-state">Complete a practice session to see key analysis here.</p>';
+            } else {
+                analysisTable.innerHTML = `
+                    <table class="analysis-table">
+                        <thead>
+                            <tr><th>Key</th><th>✓ Correct</th><th>✗ Errors</th><th>Total</th><th>Error Rate</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            ${sorted.map(k => {
+                    let isWeak = k.total >= 4 ? k.errorRate >= 25 : k.errors >= 2;
+                    return `
+                                    <tr class="${isWeak ? 'row-weak' : ''}">
+                                        <td><div class="key-pill">${k.letter.toUpperCase()}</div></td>
+                                        <td class="col-correct">${k.correct}</td>
+                                        <td class="col-error">${k.errors}</td>
+                                        <td class="col-total">${k.total}</td>
+                                        <td>
+                                            <div class="error-bar-container">
+                                                <div class="error-bar-track">
+                                                    <div class="error-bar" style="width: ${Math.min(100, k.errorRate)}%; background: ${isWeak ? 'var(--color-error)' : k.errorRate > 10 ? 'var(--color-warning)' : 'var(--color-success)'}"></div>
+                                                </div>
+                                                <span class="error-bar-pct">${k.errorRate.toFixed(1)}%</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="status-badge ${isWeak ? 'badge-weak' : k.errorRate > 10 ? 'badge-learning' : 'badge-strong'}">${isWeak ? '⚠️ Weak' : k.errorRate > 10 ? '📌 Learning' : '✅ Strong'}</span></td>
+                                    </tr>`;
+                }).join('')}
+                        </tbody>
+                    </table>`;
+            }
+        }
+
+        function renderSessionHistory(sessions) {
+            const historyDiv = document.getElementById('fullHistoryList');
+            if (sessions.length === 0) {
+                historyDiv.innerHTML = '<div class="empty-state">No sessions yet — <a href="practice.html">start practicing!</a></div>';
+            } else {
+                historyDiv.innerHTML = sessions.map((h, i) => `
+                    <div class="history-card" role="listitem">
+                        <div class="history-card-inner">
+                            <div class="hcard-num">#${sessions.length - i}</div>
+                            <div class="hcard-main">
+                                <div class="history-date">📅 ${new Date(h.created_at).toLocaleString()}</div>
+                                <div class="history-stats">
+                                    <span class="hstat"><span class="hstat-icon">🏆</span> <strong>${h.wpm}</strong> WPM</span>
+                                    <span class="hstat"><span class="hstat-icon">🎯</span> <strong>${Math.floor(h.accuracy)}%</strong> Accuracy</span>
+                                    <span class="hstat"><span class="hstat-icon">❌</span> <strong>${h.errors}</strong> Errors</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        document.getElementById('clearAllDataBtn')?.addEventListener('click', () => {
+            if (confirm('⚠️ This will permanently delete all your local practice data. Are you sure?')) {
+                localStorage.removeItem('typemaster_pro');
+                localStorage.removeItem('auto_weak_keys');
+                alert('Local data has been cleared!');
+                location.reload();
+            }
+        });
+
+        loadDashboard();
+    </script>
+
+    <!-- Friend List Drawer -->
+    <div class="friends-drawer-overlay" id="friendsOverlay"></div>
+    <div class="friends-drawer" id="friendsDrawer">
+        <div class="friends-header">
+            <h3>Friends</h3>
+            <button class="friends-close" id="friendsCloseBtn">&times;</button>
+        </div>
+        <div class="friends-list">
+            <div class="friend-item">
+                <span class="friend-avatar">🧑</span>
+                <div class="friend-info">
+                    <div class="friend-name">Alex Type</div>
+                    <div class="friend-status online">Online</div>
+                </div>
+                <div class="friend-wpm">110 WPM</div>
+            </div>
+            <div class="friend-item">
+                <span class="friend-avatar">👩</span>
+                <div class="friend-info">
+                    <div class="friend-name">Sam Swift</div>
+                    <div class="friend-status offline">Offline</div>
+                </div>
+                <div class="friend-wpm">95 WPM</div>
+            </div>
+            <div class="friend-item">
+                <span class="friend-avatar">🤓</span>
+                <div class="friend-info">
+                    <div class="friend-name">Code Ninja</div>
+                    <div class="friend-status in-game">In Practice</div>
+                </div>
+                <div class="friend-wpm">130 WPM</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="friends-toggle-btn" id="friendsToggleBtn">
+        👥 Friends
+    </button>
+
+    <script>
+        const friendsDrawer = document.getElementById('friendsDrawer');
+        const friendsOverlay = document.getElementById('friendsOverlay');
+        const friendsToggleBtn = document.getElementById('friendsToggleBtn');
+        const friendsCloseBtn = document.getElementById('friendsCloseBtn');
+
+        if (friendsToggleBtn) {
+            friendsToggleBtn.addEventListener('click', () => {
+                friendsDrawer.classList.add('open');
+                friendsOverlay.classList.add('active');
+            });
+        }
+
+        if (friendsCloseBtn) {
+            friendsCloseBtn.addEventListener('click', () => {
+                friendsDrawer.classList.remove('open');
+                friendsOverlay.classList.remove('active');
+            });
+        }
+
+        if (friendsOverlay) {
+            friendsOverlay.addEventListener('click', () => {
+                friendsDrawer.classList.remove('open');
+                friendsOverlay.classList.remove('active');
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,90 @@
+**TypeRush Presentation Script**
+
+**Introduction (60-Second Overview):**
+"TypeRush is an adaptive typing trainer that improves 
+user typing efficiency by actively focusing on their 
+weaknesses. Instead of giving random words, it analyzes
+typing mistakes, detects weak keys using mathematical
+error ratios, and dynamically generates personalized 
+practice content from a dictionary. The system tracks 
+performance metrics like WPM, accuracy, and error patterns, 
+and stores progress entirely locally. I implemented a 
+strict forward-only typing engine, a smart word generation 
+algorithm, and a dynamic real-time dashboard. This project 
+demonstrates my ability to build interactive browser-based 
+systems, design client-side algorithms, and create user-focused 
+learning tools."
+
+**1. Problem Statement:**
+"Most typing websites just give users random words and do 
+not focus on individual weaknesses. As a result, users 
+don't improve efficiently. I wanted to build a system that 
+actively detects weak keys and automatically generates targeted 
+practice sessions to build actual muscle memory."
+
+**2. Solution Approach:**
+"I built an adaptive typing engine that tracks 
+character-level errors in real-time, calculates weak keys 
+based on error ratios, and dynamically generates custom 
+practice sequences containing exactly those weak characters."
+
+**3. Architecture Explanation:**
+"The system is deliberately built with Vanilla JS to 
+optimize performance, structured into four core logical modules:
+
+- **Practice Engine:** Handles raw `keydown` events, strict typing logic, and instant UI updates.
+- **Weak Key Analyzer:** Tracks historical character accuracy globally.
+- **Adaptive Generator:** The smart word-selection algorithm filtering over the `SMART_WORDS` dictionary.
+- **Analytics Dashboard:** Manages real-time parsing of WPM and accuracy metrics."
+
+**4. Core Technical Features:**
+"Here are the five key features that make this adaptive learning system work:
+
+1. **Adaptive Learning Engine:** I track correct vs. error counts on a per-character basis and calculate weak keys based on an algorithmic error percentage.
+2. **Smart Word Generator:** Instead of using random words, I dynamically build practice strings by filtering a dictionary for words that specifically contain the user's weak characters.
+3. **Real-time Performance Tracking:** WPM, mathematical accuracy, and error counts update continuously inside a live interval loop during the session.
+4. **Persistence System:** I serialize and store all performance statistics and historical key metrics in the browser's `localStorage` to maintain user progress across completely different sessions without needing a backend server.
+5. **Strict Training Mode:** The system enforces a forward-only validation mechanic. Backspacing is disabled; users MUST type the correct character to proceed, which forces correct muscle memory."
+
+**5. Algorithmic Thinking:**
+"For weak key detection: If a key has been pressed more than 2 times and its error rate is greater than 20% (stat.errors / total > 0.2), or if it simply has more than 2 total mistakes, it is algebraically marked as 'weak' and flagged for prioritization.
+
+For word generation: Words from the dictionary are scored based on how many weak letters they contain. Words containing multiple weak keys get pushed into an array of candidates, and a session string is algorithmically generated from those high-scoring words."
+
+**6. Challenges Faced:**
+"One challenge was avoiding unnecessary DOM reflows. Because the UI updates visually on every single keystroke, querying the DOM repeatedly could cause rendering bottlenecks. I mitigated this by optimizing HTML string concatenation before injecting it into the DOM.
+
+Another was generating meaningful words instead of random gibberish characters for weak keys. I solved it by building a structured word database (SMART_WORDS) and filtering it based on character inclusion.
+
+Calculating WPM accurately on the fly required handling timestamps. I had to build a specific setInterval loop bound to a startTime delta, while managing exact active session states."
+
+**7. Future Improvements:**
+"If I were to scale this further, future improvements would include:
+
+- Incorporating TypeScript to statically type the complex gameState and keyboard layout objects.
+- Adding a Node.js/PostgreSQL backend to move state away from localStorage and implement user accounts with cloud sync.
+- Building a Heatmap to visually show users exactly which areas of the keyboard they struggle with.
+- Using an Indexed Trie data structure to make searching for adaptive words even faster."
+
+**8. Technical Skills Demonstrated:**
+"This project demonstrates my proficiency in:
+
+- JavaScript State Management (without Redux/React)
+- DOM Performance Optimization
+- Algorithm Design & Logic Filtering
+- Data Analytics Logic (WPM Math)
+- Formatted UI/UX Interaction Design"
+
+**Potential Interview Questions:**
+
+**Q: Why use localStorage instead of a Database?**
+"A: For quick persistence and low latency without backend complexity. It allows the app to function instantly offline. Architecturally, it's easy to migrate to an API later."
+
+**Q: Why use Vanilla JavaScript instead of React?**
+"A: A typing application requires instant, millisecond-level exact-state updates on keydown. Virtual DOM diffing in React actually added unnecessary abstraction overhead; doing it natively allowed me to deeply understand JavaScript event loops and exact state-to-DOM mapping."
+
+**Q: What is the Time Complexity of your Word Generator?**
+"A: Filtering candidates over the dictionary is O(n * m) where 'n' is the number of words in the dictionary and 'm' is the length of the weak keys array. To scale this, I could pre-index the dictionary by letters into a Hash Map (O(1) lookups)."
+
+**Closing Note:**
+"I tried to design it like a real product instead of just a college project."

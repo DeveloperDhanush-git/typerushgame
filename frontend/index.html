@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeRush — Master Your Typing</title>
+    <meta name="description"
+        content="TypeRush is an adaptive typing trainer that tracks your weak keys and helps you improve WPM with smart practice sessions.">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="home-page">
+
+    <div class="bg-blobs" aria-hidden="true">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="home-wrapper">
+
+        <header class="home-topbar">
+            <div class="brand-logo">
+                <span class="brand-icon">⌨️</span>
+                <span class="brand-name">TypeRush</span>
+            </div>
+            <nav class="home-topnav">
+                <a href="index.html" class="topnav-link" id="navHome">Home</a>
+                <a href="practice.html" class="topnav-link" id="navPractice">Practice</a>
+                <a href="weak-keys.html" class="topnav-link" id="navWeakKeys">Weak Keys</a>
+                <a href="dashboard.html" class="topnav-link" id="navDashboard">Dashboard</a>
+                <a href="login.html" class="topnav-link">Login</a>
+                <a href="register.html" class="topnav-link">Register</a>
+            </nav>
+        </header>
+
+        <!-- Hero section -->
+        <main class="home-hero">
+            <h1 class="hero-title">
+                Type <span class="hero-accent">Faster</span>.<br>
+                Make Fewer <span class="hero-accent">Mistakes</span>.
+            </h1>
+
+            <div class="hero-stats-strip">
+                <div class="hero-stat-item">
+                    <div class="hero-stat-num" id="homeBestWpm">0</div>
+                    <div class="hero-stat-desc">Best WPM</div>
+                </div>
+                <div class="hero-stat-divider" aria-hidden="true"></div>
+                <div class="hero-stat-item">
+                    <div class="hero-stat-num" id="homeBestAcc">0</div>
+                    <div class="hero-stat-desc">Best Accuracy %</div>
+                </div>
+                <div class="hero-stat-divider" aria-hidden="true"></div>
+                <div class="hero-stat-item">
+                    <div class="hero-stat-num" id="homeSessions">0</div>
+                    <div class="hero-stat-desc">Sessions Done</div>
+                </div>
+            </div>
+
+            <div class="hero-cta">
+                <a href="practice.html" class="cta-primary" id="ctaStart">
+                    <span class="cta-icon">🎯</span>
+                    Start Practicing
+                    <span class="cta-arrow">→</span>
+                </a>
+                <a href="weak-keys.html" class="cta-secondary" id="ctaWeakKeys">
+                    🧠 Weak Key Training
+                </a>
+            </div>
+        </main>
+    </div>
+
+    <script src="api.js"></script>
+    <script>
+        async function loadHomeStats() {
+            const user = getCurrentUser();
+            let data = null;
+            if (user) {
+                try {
+                    data = await fetchHistory();
+                } catch (e) {
+                    console.warn('Failed to load stats', e.message);
+                }
+            }
+
+            if (data) {
+                const bestWpm = data.bestWpm || 0;
+                const bestAcc = Math.floor(data.bestAcc || 0);
+                const sessions = data.totalSessions || 0;
+
+                function countUp(el, target, suffix = '') {
+                    if (!el) return;
+                    let start = 0;
+                    const step = Math.ceil(target / 30);
+                    const interval = setInterval(() => {
+                        start = Math.min(start + step, target);
+                        el.textContent = start + suffix;
+                        if (start >= target) clearInterval(interval);
+                    }, 30);
+                }
+
+                countUp(document.getElementById('homeBestWpm'), bestWpm);
+                countUp(document.getElementById('homeBestAcc'), bestAcc, '%');
+                countUp(document.getElementById('homeSessions'), sessions);
+            } else {
+                document.getElementById('homeBestAcc').textContent = '—';
+                document.getElementById('homeBestWpm').textContent = '—';
+                document.getElementById('homeSessions').textContent = '0';
+            }
+        }
+
+        loadHomeStats();
+    </script>
+    <!-- Friend List Drawer -->
+    <div class="friends-drawer-overlay" id="friendsOverlay"></div>
+    <div class="friends-drawer" id="friendsDrawer">
+        <div class="friends-header">
+            <h3>Friends</h3>
+            <button class="friends-close" id="friendsCloseBtn">&times;</button>
+        </div>
+        <div class="friends-list">
+            <div class="friend-item">
+                <span class="friend-avatar">🧑</span>
+                <div class="friend-info">
+                    <div class="friend-name">Alex Type</div>
+                    <div class="friend-status online">Online</div>
+                </div>
+                <div class="friend-wpm">110 WPM</div>
+            </div>
+            <div class="friend-item">
+                <span class="friend-avatar">👩</span>
+                <div class="friend-info">
+                    <div class="friend-name">Sam Swift</div>
+                    <div class="friend-status offline">Offline</div>
+                </div>
+                <div class="friend-wpm">95 WPM</div>
+            </div>
+            <div class="friend-item">
+                <span class="friend-avatar">🤓</span>
+                <div class="friend-info">
+                    <div class="friend-name">Code Ninja</div>
+                    <div class="friend-status in-game">In Practice</div>
+                </div>
+                <div class="friend-wpm">130 WPM</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="friends-toggle-btn" id="friendsToggleBtn">
+        👥 Friends
+    </button>
+
+    <script>
+        const friendsDrawer = document.getElementById('friendsDrawer');
+        const friendsOverlay = document.getElementById('friendsOverlay');
+        const friendsToggleBtn = document.getElementById('friendsToggleBtn');
+        const friendsCloseBtn = document.getElementById('friendsCloseBtn');
+
+        if (friendsToggleBtn) {
+            friendsToggleBtn.addEventListener('click', () => {
+                friendsDrawer.classList.add('open');
+                friendsOverlay.classList.add('active');
+            });
+        }
+
+        if (friendsCloseBtn) {
+            friendsCloseBtn.addEventListener('click', () => {
+                friendsDrawer.classList.remove('open');
+                friendsOverlay.classList.remove('active');
+            });
+        }
+
+        if (friendsOverlay) {
+            friendsOverlay.addEventListener('click', () => {
+                friendsDrawer.classList.remove('open');
+                friendsOverlay.classList.remove('active');
+            });
+        }
+    </script>
+</body>
+
+</html>

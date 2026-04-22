@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeRush — Login</title>
+    <meta name="description" content="Log in to your TypeRush account to track your typing progress.">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="inner-page">
+
+    <header class="app-topbar">
+        <a href="index.html" class="topbar-brand">
+            <span class="topbar-icon">⌨️</span>
+            <span class="topbar-name">TypeRush</span>
+        </a>
+        <nav class="topbar-nav">
+            <a href="index.html" class="topbar-nav-link" id="tnHome">Home</a>
+            <a href="practice.html" class="topbar-nav-link">Practice</a>
+            <a href="weak-keys.html" class="topbar-nav-link">Weak Keys</a>
+            <a href="dashboard.html" class="topbar-nav-link">Dashboard</a>
+            <a href="login.html" class="topbar-nav-link active">Login</a>
+            <a href="register.html" class="topbar-nav-link">Register</a>
+        </nav>
+    </header>
+
+    <main class="inner-main auth-main">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-icon">👋</div>
+                <h1 class="auth-title">Welcome Back</h1>
+                <p class="auth-sub">Log in to track your progress and compete.</p>
+            </div>
+
+            <!-- Error/Success message area -->
+            <div id="loginMessage" class="auth-message" style="display:none;"></div>
+
+            <form id="loginForm" class="auth-form">
+                <div class="form-group">
+                    <label for="loginUsername">Email or Username</label>
+                    <input type="text" id="loginUsername" class="auth-input" placeholder="Enter your email or username"
+                        required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" class="auth-input" placeholder="Enter your password"
+                        required>
+                </div>
+                <button type="submit" class="ctrl-btn ctrl-btn--primary auth-btn" id="loginBtn">Log In</button>
+            </form>
+
+            <div class="auth-footer">
+                <p>Don't have an account? <a href="register.html">Register here</a></p>
+            </div>
+        </div>
+    </main>
+
+    <script src="api.js"></script>
+    <script>
+        // If already logged in, redirect to dashboard
+        if (isLoggedIn()) {
+            window.location.href = 'dashboard.html';
+        }
+
+        const loginForm = document.getElementById('loginForm');
+        const messageDiv = document.getElementById('loginMessage');
+
+        function showMessage(text, isError = true) {
+            messageDiv.textContent = text;
+            messageDiv.className = 'auth-message ' + (isError ? 'auth-error' : 'auth-success');
+            messageDiv.style.display = 'block';
+        }
+
+        loginForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const btn = document.getElementById('loginBtn');
+
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+
+            try {
+                const data = await loginUser(username, password);
+                showMessage('Login successful! Redirecting...', false);
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 800);
+            } catch (err) {
+                showMessage(err.message);
+                btn.disabled = false;
+                btn.textContent = 'Log In';
+            }
+        });
+    </script>
+</body>
+
+</html>
