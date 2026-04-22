@@ -324,6 +324,24 @@ async function sendInvite(toUserId) {
 }
 // ── Global UI Updates (Auth Nav) ──
 window.addEventListener('DOMContentLoaded', () => {
+    const path = window.location.pathname;
+    const page = path.split('/').pop() || 'login.html'; // Default to login if root
+
+    const isGuestPage = page === 'login.html' || page === 'register.html';
+    const loggedIn = isLoggedIn();
+
+    // 🔒 Auth Guard: Redirect to login if not authenticated
+    if (!loggedIn && !isGuestPage) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    // 🔓 Guest Guard: Redirect to index if already logged in and visiting login/register
+    if (loggedIn && isGuestPage) {
+        window.location.href = 'index.html';
+        return;
+    }
+
     let nav = document.querySelector('.topbar-nav');
     let isHomeNav = false;
 
@@ -334,11 +352,8 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     if (nav) {
-        const path = window.location.pathname;
-        const page = path.split('/').pop() || 'index.html';
-
         // Hide navbar completely on auth pages
-        if (page === 'login.html' || page === 'register.html') {
+        if (isGuestPage) {
             nav.style.display = 'none';
             return;
         }

@@ -137,7 +137,7 @@ const server = http.createServer(async (req, res) => {
     // ────────────────────────────────────────
     // Static File Serving — serves frontend files
     // ────────────────────────────────────────
-    let filePath = pathname === '/' ? '/index.html' : pathname;
+    let filePath = pathname === '/' ? '/login.html' : pathname;
 
     // Security: prevent directory traversal
     filePath = path.normalize(filePath);
