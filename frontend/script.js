@@ -233,12 +233,9 @@ function getAdaptiveWeakKeys() {
     for (let [key, stat] of Object.entries(combinedStats)) {
         let total = stat.correct + stat.errors;
 
-        let isWeak = false;
-        if (total >= 4) {
-            isWeak = (stat.errors / total) >= 0.10;
-        } else {
-            isWeak = stat.errors >= 2;
-        }
+        // A key is weak only when it has been pressed at least 4 times
+        // AND has a 25%+ error rate. Pure percentage — no count-based fallback.
+        const isWeak = total >= 4 && (stat.errors / total) >= 0.25;
 
         if (isWeak) weakSet.add(key);
     }

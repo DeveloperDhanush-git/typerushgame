@@ -53,8 +53,8 @@
 
         <!-- Legend -->
         <div class="wk-legend" role="note">
-            <span class="wk-legend-item wk-severe">■ High error rate (&gt;20%)</span>
-            <span class="wk-legend-item wk-ok">■ Learning (&lt;20%)</span>
+            <span class="wk-legend-item wk-severe">■ High error rate (&gt;25%)</span>
+            <span class="wk-legend-item wk-ok">■ Learning (&lt;25%)</span>
         </div>
 
         <!-- Keys grid -->
@@ -132,7 +132,8 @@
             grid.innerHTML = allLetters.map(letter => {
                 const stats = serverKeyStats[letter] || { correct: 0, errors: 0 };
                 const total = stats.correct + stats.errors;
-                const isWeak = total >= 4 ? ((stats.errors / total) >= 0.10) : (stats.errors >= 2);
+                // A key is weak only when pressed ≥4 times AND error rate ≥25%.
+                const isWeak = total >= 4 && (stats.errors / total) >= 0.25;
                 const errorRate = total > 0 ? ((stats.errors / total) * 100).toFixed(0) : 0;
                 const hasData = total > 0;
 
@@ -156,7 +157,8 @@
 
             for (let [key, stat] of Object.entries(serverKeyStats)) {
                 const total = stat.correct + stat.errors;
-                const isWeak = total >= 4 ? ((stat.errors / total) >= 0.10) : (stat.errors >= 2);
+                // Same threshold as everywhere else: ≥4 presses + ≥25% error rate
+                const isWeak = total >= 4 && (stat.errors / total) >= 0.25;
                 if (isWeak) weakLetters.push(key);
             }
 

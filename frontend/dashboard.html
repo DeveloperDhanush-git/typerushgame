@@ -165,7 +165,8 @@
                         </thead>
                         <tbody>
                             ${sorted.map(k => {
-                    let isWeak = k.total >= 4 ? k.errorRate >= 25 : k.errors >= 2;
+                    // Weak = at least 4 presses AND 25%+ error rate (pure % — no count fallback)
+                    let isWeak = k.total >= 4 && k.errorRate >= 25;
                     return `
                                     <tr class="${isWeak ? 'row-weak' : ''}">
                                         <td><div class="key-pill">${k.letter.toUpperCase()}</div></td>
